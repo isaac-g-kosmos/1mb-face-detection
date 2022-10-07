@@ -33,28 +33,26 @@ df=pd.read_csv(r'C:\Users\isaac\PycharmProjects\face_exctraction\Ultra-Light-Fas
 # undesirev_col='Unnamed: 0'
 # df.drop(undesirev_col,axis=1,inplace=True)
 
-# paths=df['path'].tolist()
-# paths=[os.path.join(r'C:\Users\isaac\Downloads\original_images',x) for x in paths ]
-# # os.path.join(r'C:\Users\isaac\Downloads\original_images',path)
+paths=df['path'].tolist()
+paths=[os.path.join(r'C:\Users\isaac\Downloads\original_images',x) for x in paths ]
+# os.path.join(r'C:\Users\isaac\Downloads\original_images',path)
 #%%
 dictionary={}
-for x in range(len(df)):
+for x in paths:
     boxes_pic=[]
-    path=df['path'][x]
-    path=os.path.join(r'C:\Users\isaac\Downloads\original_images',path)
-    img=Image.open(path)
+    img=Image.open(x)
     img=img.convert('RGB')
     img=np.array(img)
     boxes, labels, probs =predictor.predict(img,1000 / 2, .95)
-    # fig, ax = plt.subplots(1)
-    # ax.imshow(img)
+    fig, ax = plt.subplots(1)
+    ax.imshow(img)
     np_boxes = boxes.cpu().detach().numpy()
     for box in np_boxes:
         rect = plt.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1], fill=False, color='red')
         box1 = [box[0], box[1], box[2], box[3]]
         boxes_pic.append(box1)
-    #     ax.add_patch(rect)
-    # plt.show()
+        ax.add_patch(rect)
+    plt.show()
     # break
     dictionary[x]=boxes_pic
 
@@ -72,21 +70,25 @@ import collections
 counter=collections.Counter(number_list)
 print(counter)
 #%%
-import re
-idx=150
-path = df['path'][idx]
-path = os.path.join(r'C:\Users\isaac\Downloads\original_images', path)
-bb_box=df['faceRect'][idx]
-bb_box=re.findall("\d+\.\d+",bb_box)
+faces=2
+indexes=[x for x in range(len(number_list)) if number_list[x] ==faces]
+#randomly sample 1 index
+import random
+random_index=random.choice(indexes)
 
-print(bb_box)
-
-bb_box=[float(x) for x in bb_box]
-img=Image.open(path)
+keys_list=list(dictionary.keys())
+img=Image.open(keys_list[random_index])
 img=img.convert('RGB')
 img=np.array(img)
+boxes, labels, probs =predictor.predict(img,1000 / 2, 0.4 )
 fig, ax = plt.subplots(1)
-slice=img[int(bb_box[1]):int(bb_box[1]+bb_box[3]),int(bb_box[0]):int(bb_box[0]+bb_box[2])]
+ax.imshow(img)
+np_boxes = boxes.cpu().detach().numpy()
+for box in np_boxes:
+    rect = plt.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1], fill=False, color='red')
+    ax.add_patch(rect)
+plt.show()
+print(keys_list[random_index])
 #%%
 dictionary_copy=dictionary.copy()
 #%%
@@ -97,8 +99,8 @@ for x in indexes:
 
     boxes=dictionary_copy[x]
     box1=boxes[0]
-    box2=boxes[1]
-    # box2 =df.iloc[idx]['faceRect']
+    idx=paths.index(x)
+    box2 =df.iloc[idx]['faceRect']
     #calculate the area of the boxes
     area1=(box1[2]-box1[0])*(box1[3]-box1[1])
     area2=(box2[2]-box2[0])*(box2[3]-box2[1])
@@ -109,22 +111,71 @@ for x in indexes:
     else:
         if box2[0]<box1[0] and box2[1]<box1[1] and box2[2]>box1[2] and box2[3]>box1[3]:
             dictionary_copy[x]=[box2]
+            indexes.remove(x)
+
 #%%
-indexes = [x for x in dictionary_copy.keys() if len(dictionary_copy[x]) != 1]
+def check_intesection_of_boxes(box1,box2):
+    #check if the boxes intersect and their intersection area
+    x1,y1,x2,y2=box1
+    x3,y3,x4,y4=box2
+    if x1>x4 or x3>x2:
+        return 0
+    if y1>y4 or y3>y2:
+        return 0
+    x_overlap=max(0,min(x2,x4)-max(x1,x3))
+    y_overlap=max(0,min(y2,y4)-max(y1,y3))
+    intersection_area=x_overlap*y_overlap
+    return intersection_area
+
+from kutils.image.face_ops import extract_face
+from kutils.image.face_ops import dlib_detection_to_sides
 for x in indexes:
-    bb_box=df.iloc[x]['faceRect']
-    print(x)
-    print(df.iloc[x]['path'])
-    bb_box = re.findall("\d+\.\d+", bb_box)
-    bb_box = [float(x) for x in bb_box]
-    # bb_box=[bb_box[0],bb_box[1],bb_box[0]+bb_box[2],bb_box[1]+bb_box[3]]
-    #
-    bb_box = [bb_box[0], bb_box[1], bb_box[0] + bb_box[3], bb_box[1] + bb_box[2]]
-    dictionary_copy[x]=[bb_box]
+
+    boxes=dictionary[x]
+
+    box1,box2=boxes
+    img=Image.open(x)
+    img=img.convert('RGB')
+    img=np.array(img)
+    try:
+        img,dets=extract_face(img,1)
+        top, right, bottom, left = dlib_detection_to_sides(dets)
+        dlib_box=[left,top,right,bottom]
+        intersection_area1=check_intesection_of_boxes(box1,dlib_box)
+        intersection_area2=check_intesection_of_boxes(box2,dlib_box)
+        if intersection_area1>intersection_area2:
+            dictionary_copy[x]=[box1]
+        else:
+            dictionary_copy[x]=[box2]
+    except:
+        pass
+    # plt.imshow(img)
+    # plt.show()
+
+# print(dlib_detection_to_sides(dets))
 #%%
 number_list=[]
 for x in dictionary_copy.keys():
     number_list.append(len(dictionary_copy[x]))
+print(max(number_list))
+print(min(number_list))
+print(np.mean(number_list))
+#count ocurrances of each number from 1 to 6
+import collections
+counter=collections.Counter(number_list)
+print(counter)
+#%%
+dictionary_copy_copy=dictionary_copy.copy()
+#%%
+kesy_list=list(dictionary_copy_copy.keys())
+for x in kesy_list:
+    boxes=dictionary_copy_copy[x]
+    if len(boxes)<1:
+        dictionary_copy_copy.pop(x)
+#%%
+number_list=[]
+for x in dictionary_copy_copy.keys():
+    number_list.append(len(dictionary_copy_copy[x]))
 print(max(number_list))
 print(min(number_list))
 print(np.mean(number_list))
@@ -155,35 +206,32 @@ bb_x1=[]
 bb_y1=[]
 bb_x2=[]
 bb_y2=[]
-heights=[]
-widths=[]
 for x in range(len(df)):
-
-    boxes=dictionary_copy[x]
-    box=boxes[0]
-    paths.append(df['path'][x])
-    x1.append(df['x1'][x])
-    y1.append(df['y1'][x])
-    x2.append(df['x2'][x])
-    y2.append(df['y2'][x])
-    x3.append(df['x3'][x])
-    y3.append(df['y3'][x])
-    x4.append(df['x4'][x])
-    y4.append(df['y4'][x])
-    x5.append(df['x5'][x])
-    y5.append(df['y5'][x])
-    lentes_claros.append(df['lentes_claros'][x])
-    lentes_oscuros.append(df['lentes_oscuros'][x])
-    ilumincacion.append(df['iluminacion_indadecuada'][x])
-    cara_cubierta.append(df['cara_cubierta'][x])
-    postura_inadecuada.append(df['postura_inadecuada'][x])
-    sombrero.append(df.loc[x]['sombrero'])
-    bb_x1.append(box[0])
-    bb_y1.append(box[1])
-    bb_x2.append(box[2])
-    bb_y2.append(box[3])
-    heights.append(df.loc[x]['height'])
-    widths.append(df.loc[x]['width'])
+    if df.iloc[x][0] in dictionary_copy_copy.keys():
+        boxes=dictionary_copy_copy[df.iloc[x][0]]
+        box=boxes[0]
+        paths.append(df.loc[x][0])
+        x1.append(df.loc[x][1])
+        y1.append(df.loc[x][2])
+        x2.append(df.loc[x][3])
+        y2.append(df.loc[x][4])
+        x3.append(df.loc[x][5])
+        y3.append(df.loc[x][6])
+        x4.append(df.loc[x][7])
+        y4.append(df.loc[x][8])
+        x5.append(df.loc[x][9])
+        y5.append(df.loc[x][10])
+        lentes_claros.append(df.loc[x][11])
+        lentes_oscuros.append(df.loc[x][12])
+        ilumincacion.append(df.loc[x][13])
+        cara_cubierta.append(df.loc[x][14])
+        postura_inadecuada.append(df.loc[x][15])
+        sombrero.append(df.loc[x][16])
+        # id.append(df.loc[x][17])
+        bb_x1.append(box[0])
+        bb_y1.append(box[1])
+        bb_x2.append(box[2])
+        bb_y2.append(box[3])
 #%%
 print(len(paths),
 len(x1),
@@ -228,11 +276,10 @@ final_df=pd.DataFrame({
     'bb_x1':bb_x1,
     'bb_y1':bb_y1,
     'bb_x2':bb_x2,
-    'bb_y2':bb_y2,
-    'width': widths,
-    'height': heights
+    'bb_y2':bb_y2
+
 })
 #drop duplicates
 final_df=final_df.drop_duplicates(subset=['path'])
 #%%
-final_df.to_csv(r'C:\Users\isaac\PycharmProjects\tensorflow_filter\SoF_dataset.csv',index=False)
+final_df.to_csv('first_augmentations.csv',index=False)
