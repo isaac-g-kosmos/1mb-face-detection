@@ -18,7 +18,7 @@ define_img_size(480)
 # predictor = create_Mb_Tiny_RFB_fd_predictor(net, candidate_size=1000, device=device)
 
 # model_path = "models/pretrained/version-slim-320.pth"
-model_path = "models/pretrained/version-RFB-320.pth"
+model_path = "models/pretrained/version-slim-640.pth"
 net = create_mb_tiny_fd(2, is_test=True, device=device)
 predictor = create_mb_tiny_fd_predictor(net, candidate_size=1000, device=device)
 
@@ -28,33 +28,39 @@ net.load(model_path)
 #%%
 import pandas as pd
 import os
-df=pd.read_csv(r'C:\Users\isaac\PycharmProjects\face_exctraction\Ultra-Light-Fast-Generic-Face-Detector-1MB\AFLW_df.csv')
+df=pd.read_csv('hpalabels1.csv')
 # df['path']=df['path'].apply(lambda x: x.replace(r'C:\Users\isaac\Downloads\vlogs1\classified','C:\\Users\\isaac\\PycharmProjects\\tensorflow_filter\\classified\\'))
-# undesirev_col='Unnamed: 0'
-# df.drop(undesirev_col,axis=1,inplace=True)
+undesirev_col='Unnamed: 0'
+df.drop(undesirev_col,axis=1,inplace=True)
 
 paths=df['path'].tolist()
-paths=[os.path.join(r'C:\Users\isaac\Downloads\original_images',x) for x in paths ]
+# paths=[os.path.join(r'C:\Users\isaac\Downloads\original_images',x) for x in paths ]
 # os.path.join(r'C:\Users\isaac\Downloads\original_images',path)
 #%%
 dictionary={}
-for x in paths:
+list1=[]
+for x in range(len(df)):
     boxes_pic=[]
-    img=Image.open(x)
+    path=df['path'][x]
+    # path=os.path.join(r'C:\Users\isaac\Downloads\original_images',path)
+    img=Image.open(path)
     img=img.convert('RGB')
     img=np.array(img)
-    boxes, labels, probs =predictor.predict(img,1000 / 2, .99)
-    fig, ax = plt.subplots(1)
-    ax.imshow(img)
+    boxes, labels, probs =predictor.predict(img,1000 / 2, .75)
+    if len(probs)>0:
+        if probs[-1]<0.85:
+            list1.append(path)
+    # fig, ax = plt.subplots(1)
+    # ax.imshow(img)
     np_boxes = boxes.cpu().detach().numpy()
     for box in np_boxes:
         rect = plt.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1], fill=False, color='red')
         box1 = [box[0], box[1], box[2], box[3]]
         boxes_pic.append(box1)
-        ax.add_patch(rect)
-    plt.show()
+    #     ax.add_patch(rect)
+    # plt.show()
     # break
-    dictionary[x]=boxes_pic
+    dictionary[path]=boxes_pic
 
 
 #%%
@@ -69,6 +75,7 @@ print(np.mean(number_list))
 import collections
 counter=collections.Counter(number_list)
 print(counter)
+
 #%%
 faces=2
 indexes=[x for x in range(len(number_list)) if number_list[x] ==faces]
@@ -80,7 +87,7 @@ keys_list=list(dictionary.keys())
 img=Image.open(keys_list[random_index])
 img=img.convert('RGB')
 img=np.array(img)
-boxes, labels, probs =predictor.predict(img,1000 / 2, 0.99 )
+boxes, labels, probs =predictor.predict(img,1000 / 2, .75 )
 fig, ax = plt.subplots(1)
 ax.imshow(img)
 np_boxes = boxes.cpu().detach().numpy()
@@ -100,7 +107,7 @@ for x in indexes:
 
     boxes=dictionary_copy[x]
     box1=boxes[0]
-    idx=paths.index(x)
+    # idx=paths.index(x)
     box2 =boxes[1]
     #calculate the area of the boxes
     area1=(box1[2]-box1[0])*(box1[3]-box1[1])
@@ -280,7 +287,4 @@ final_df=pd.DataFrame({
     'bb_y2':bb_y2
 
 })
-#drop duplicates
-final_df=final_df.drop_duplicates(subset=['path'])
-#%%
-final_df.to_csv('new_augmentations-18-10.csv',index=False)
+final_df.to_csv('HPAD.csv',index=False)

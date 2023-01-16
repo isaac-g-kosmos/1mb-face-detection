@@ -26,6 +26,9 @@ def generate_priors(feature_map_list, shrinkage_list, image_size, min_boxes, cla
     priors = torch.tensor(priors)
     if clamp:
         torch.clamp(priors, 0.0, 1.0, out=priors)
+
+    import numpy as np
+    np.savetxt("priors.txt", priors.cpu().numpy())
     return priors
 
 

@@ -18,8 +18,8 @@ define_img_size(480)
 # predictor = create_Mb_Tiny_RFB_fd_predictor(net, candidate_size=1000, device=device)
 
 # model_path = "models/pretrained/version-slim-320.pth"
-model_path = "models/pretrained/version-slim-640.pth"
-net = create_mb_tiny_fd(2, is_test=True, device=device)
+model_path = "models/pretrained/version-RFB-320.pth"
+net = create_Mb_Tiny_RFB_fd(2, is_test=True, device=device)
 predictor = create_mb_tiny_fd_predictor(net, candidate_size=1000, device=device)
 
 
@@ -28,7 +28,7 @@ net.load(model_path)
 #%%
 import pandas as pd
 import os
-df=pd.read_csv(r'C:\Users\isaac\PycharmProjects\face_exctraction\Ultra-Light-Fast-Generic-Face-Detector-1MB\SoF.csv')
+df=pd.read_csv(r'C:\Users\isaac\PycharmProjects\face_exctraction\Ultra-Light-Fast-Generic-Face-Detector-1MB\AFLW_df.csv')
 # df['path']=df['path'].apply(lambda x: x.replace(r'C:\Users\isaac\Downloads\vlogs1\classified','C:\\Users\\isaac\\PycharmProjects\\tensorflow_filter\\classified\\'))
 # undesirev_col='Unnamed: 0'
 # df.drop(undesirev_col,axis=1,inplace=True)
@@ -46,15 +46,15 @@ for x in range(len(df)):
     img=img.convert('RGB')
     img=np.array(img)
     boxes, labels, probs =predictor.predict(img,1000 / 2, .95)
-    # fig, ax = plt.subplots(1)
-    # ax.imshow(img)
+    fig, ax = plt.subplots(1)
+    ax.imshow(img)
     np_boxes = boxes.cpu().detach().numpy()
     for box in np_boxes:
         rect = plt.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1], fill=False, color='red')
         box1 = [box[0], box[1], box[2], box[3]]
         boxes_pic.append(box1)
-    #     ax.add_patch(rect)
-    # plt.show()
+        ax.add_patch(rect)
+    plt.show()
     # break
     dictionary[x]=boxes_pic
 
