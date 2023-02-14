@@ -3,13 +3,13 @@ import numpy as np
 from PIL import Image
 import os
 import matplotlib.pyplot as plt
-df=pd.read_csv(r'stock_images.csv')
+df=pd.read_csv(r'vgg_face_hat.csv')
 #%%
 heights=[]
 widths=[]
 for x in range(len(df)):
     path=df['path'][x]
-    img=Image.open(os.path.join(r'C:\Users\isaac\PycharmProjects\sat-robot\stock_images',path))
+    img=Image.open(os.path.join(r'C:\Users\isaac\PycharmProjects\tensorflow_filter\vgg_face',path))
     width, height = img.size
     img=np.array(img)
     heights.append(height)
@@ -20,4 +20,4 @@ for x in range(len(df)):
 df['width']=widths
 df['height']=heights
 #%%M
-df.to_csv(r'C:\Users\isaac\PycharmProjects\tensorflow_filter\dark_glasses_data\stock_images.csv',index=False)
+df.to_csv(r'C:\Users\isaac\PycharmProjects\tensorflow_filter\hat_df\vgg_face_hat.csv',index=False)
