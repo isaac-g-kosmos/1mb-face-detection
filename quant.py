@@ -4,8 +4,9 @@ from PIL import Image
 import onnx
 import numpy as np
 import cv2
-model=r'models/onnx/model.onnx'
-output_model=r'models/onnx/model.quant.onnx'
+#%%
+model=r'Face_detection.onnx'
+output_model=r'model.quant.onnx'
 
 class reader(CalibrationDataReader):
     def __init__(self, data_set):
@@ -45,6 +46,7 @@ import onnx
 import onnxruntime as rt
 import numpy as np
 from onnxruntime.quantization import quantize_dynamic, QuantType, QuantFormat
-model=r'models/onnx/multi2.onnx'
-output_model=r'models/onnx/multi2.quant.onnx'
+model=r'C:\Users\isaac\PycharmProjects\face_exctraction\Ultra-Light-Fast-Generic-Face-Detector_Tensorflow-Model-Converter\combined_model-hat-pose-glasses-occlusion.onnx'
+output_model=r'models/onnx/combined_model-hat-pose-glasses-occlusion.quant.onnx'
 quantize_dynamic(model, output_model, weight_type=QuantType.QUInt8, op_types_to_quantize=['Conv', 'MatMul'])
+

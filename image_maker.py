@@ -26,7 +26,7 @@ model = tf.keras.models.load_model(
 targe_path = r'C:\Users\isaac\PycharmProjects\face_exctraction\Ultra-Light-Fast-Generic-Face-Detector-1MB\interview_images'
 
 
-vid_path = r'C:\Users\isaac\PycharmProjects\face_exctraction\Ultra-Light-Fast-Generic-Face-Detector-1MB\video_inference_data\Interview with a Postdoc, Junior Python Developer.mp4'
+vid_path = r'C:\Users\isaac\PycharmProjects\face_exctraction\Ultra-Light-Fast-Generic-Face-Detector-1MB\video_inference_data\vlog.mp4'
 
 vidcap = cv2.VideoCapture(vid_path)
 success, image = vidcap.read()
