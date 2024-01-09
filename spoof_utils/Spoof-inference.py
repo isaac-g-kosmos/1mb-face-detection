@@ -19,24 +19,23 @@ leeway = .2
 # predictor = create_Mb_Tiny_RFB_fd_predictor(net, candidate_size=1000, device=device)
 
 # model_path = "models/pretrained/version-slim-320.pth"
-model_path = "models/pretrained/version-RFB-320.pth"
+model_path = "/home/ubuntu/1mb-face-detection/models/pretrained/version-RFB-320.pth"
 net = create_Mb_Tiny_RFB_fd(2, is_test=True, device=device)
 predictor = create_mb_tiny_fd_predictor(net, candidate_size=1000, device=device)
 
 net.load(model_path)
 # %%
-
-df = pd.read_csv(r'C:\Users\isaac\PycharmProjects\deep-head-pose\pose_anotations_BIWI.csv')
-df['path'] = df['path'].apply(lambda x: x[1:])
+initial_path="/home/ubuntu/spoof-detection/linux_datasets/with_bb/CELEB_train_1.csv"
+df = pd.read_csv(initial_path)
+# df['path'] = df['path'].apply(lambda x: x[1:])
 data_list = df['path'].tolist()
-pictures_path = r'C:\Users\isaac\PycharmProjects\Pose_images\faces_0'
-
+del df
 # %%
 dictionary = {}
 
 for x in data_list:
     boxes_pic = []
-    path = os.path.join(pictures_path, x)
+    path = x
 
     img = Image.open(path)
     width = img.width
@@ -66,11 +65,17 @@ print(min(number_list))
 print(np.mean(number_list))
 
 # make a df with images with only one pic their path box and label
-df1 = pd.DataFrame(columns=['path', 'bb_x1', 'bb_y1', 'bb_x2', 'bb_y2'])
+df1 = pd.DataFrame(columns=['path', 'bb_x1', 'bb_y1', 'bb_x2', 'bb_y2',"width","height"])
 for x in dictionary.keys():
-    if len(dictionary[x]) == 1:
-        df1 = df1.append({'path': x, 'bb_x1': dictionary[x]["boxes"][0][0], 'bb_y1': dictionary[x]["boxes"][0][1],
-                          'bb_x2': dictionary[x]["boxes"][0][2],'bb_y2': dictionary[x]["boxes"][0][3],
-                          "width":dictionary[x]["width"],"height":dictionary[x]["height"], },
-                         ignore_index=True)
+    if len(dictionary[x]["boxes"]) == 1:
+        df1 = pd.concat([df1, pd.DataFrame({
+            'path': [x],
+            'bb_x1': [box[0]],
+            'bb_y1': [box[1]],
+            'bb_x2': [box[2]],
+            'bb_y2': [box[3]],
+            'width': [dictionary[x]['width']],
+            'height': [dictionary[x]['height']]
+        })], ignore_index=True)
+df1.to_csv(f"/home/ubuntu/1mb-face-detection/spoof_utils/{os.path.basename(initial_path)}",index=False)
 # %%
